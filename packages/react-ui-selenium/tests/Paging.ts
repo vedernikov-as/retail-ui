@@ -75,7 +75,7 @@ describe("Paging", function () {
       const element = await this.browser.findElement(By.css("#test-element"));
       await this.browser.actions({
         bridge: true
-      }).click(this.browser.findElement(By.css("[class^=\"Paging-paging\"]"))).sendKeys(Key.ARROW_RIGHT).sendKeys(Key.ENTER).sendKeys(Key.CONTROL, Key.ARROW_RIGHT).perform();
+      }).click(this.browser.findElement(By.css("[class^=\"Paging-paging\"]"))).sendKeys(Key.ARROW_RIGHT).sendKeys(Key.ENTER).sendKeys(Key.CONTROL, Key.ARROW_RIGHT, Key.CONTROL).perform();
       await expect((await element.takeScreenshot())).to.matchImage("Next page");
     });
     it("focused", async function () {
