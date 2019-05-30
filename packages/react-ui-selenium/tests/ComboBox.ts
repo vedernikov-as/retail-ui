@@ -24,9 +24,10 @@ describe('ComboBox', function() {
           bridge: true,
         })
         .click(this.browser.findElement(By.css('[data-comp-name="InputLikeText"]')))
-        .move({
-          origin: this.browser.findElement(By.css('[data-comp-name="MenuItem"]:nth-of-type(4)')),
-        })
+        .perform();
+      await this.browser
+        .actions({ bridge: true })
+        .move({ origin: this.browser.findElement(By.css('[data-comp-name="MenuItem"]:nth-of-type(4)')) })
         .perform();
       await expect(await element.takeScreenshot()).to.matchImage('hovered');
     });
@@ -37,9 +38,9 @@ describe('ComboBox', function() {
           bridge: true,
         })
         .click(this.browser.findElement(By.css('[data-comp-name="InputLikeText"]')))
-        .move({
-          origin: this.browser.findElement(By.css('[data-comp-name="MenuItem"]:nth-of-type(4)')),
-        })
+        .perform();
+      await this.browser
+        .actions({ bridge: true })
         .click(this.browser.findElement(By.css('[data-comp-name="MenuItem"]:nth-of-type(4)')))
         .perform();
       await expect(await element.takeScreenshot()).to.matchImage('selected');
