@@ -102,7 +102,7 @@ describe('Checkbox', function() {
       await expect(await element.takeScreenshot()).to.matchImage('plain');
     });
   });
-  describe('w/o label', function() {
+  describe('without label', function() {
     it('plain', async function() {
       const element = await this.browser.findElement(By.css('#test-element'));
       await expect(await element.takeScreenshot()).to.matchImage('plain');
