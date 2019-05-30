@@ -1,54 +1,45 @@
-const { renameSync } = require('fs');
-const path = require('path');
 const { spawnSync } = require('child_process');
+const { moveSync, copySync, removeSync, emptyDirSync } = require('fs-extra');
+const { getPackageInfo, TAGS } = require('../scripts/package/package-info');
+const { loadConfig } = require('../scripts/package/package-config');
+const path = require('path');
 const config = require('./config.js');
-const semver = require('semver');
+const packageJson = path.join(__dirname, '../package.json');
+
+const { npmVersions, distTag, publishVersion } = getPackageInfo(loadConfig(packageJson));
+
+const DIR = {
+  CURRENT: config.styleguideDir, // the files from the prior build with the config.js
+  LATEST: path.join(config.styleguideDir, '..'),
+  UNSTABLE: path.join(config.styleguideDir, '..', `unstable/${publishVersion}`),
+  LTS: path.join(config.styleguideDir, '..', 'lts'),
+};
+
+switch (distTag) {
+  case TAGS.LATEST:
+    break;
+  case TAGS.LTS:
+    emptyDirSync(DIR.LTS);
+    copySync(DIR.CURRENT, DIR.LTS);
+    break;
+  case TAGS.UNSTABLE:
+    moveSync(DIR.CURRENT, DIR.UNSTABLE, { overwrite: true });
+    process.exit(0);
+  case TAGS.OLD:
+    process.exit(0);
+  default:
+    removeSync(DIR.CURRENT);
+    console.log('Unknown package tag: ', tag);
+    process.exit(0);
+}
 
 const excludeVersions = ['0.8.8'];
-
-const { error, stdout } = spawnSync('npm', ['show', 'retail-ui', '--json'], { shell: true });
-
-if (error) {
-  console.log(error);
-  process.exit(-1);
-}
-
-const { versions, 'dist-tags': tags } = JSON.parse(stdout.toString());
-const isStable = config.version === tags.latest;
-const isOldVersion = semver.lt(config.version, tags.latest);
-
-if (isOldVersion) {
-  renameSync(config.styleguideDir, path.join(config.styleguideDir, '..', config.version));
-  process.exit(0);
-}
-
-if (!isStable) {
-  renameSync(config.styleguideDir, path.join(config.styleguideDir, '..', 'next'));
-  process.exit(0);
-}
-
-const stableVersions = versions
+const stableVersions = npmVersions
   .reverse()
   .filter(version => !version.includes('-'))
   .filter(version => !excludeVersions.includes(version));
 
-const versionSection = { name: 'Versions', sections: [] };
-
 // NOTE For some reason styleguidist need content field with valid file
-versionSection.sections.push({
-  name: 'next',
-  content: '../README.md',
-  href: 'http://tech.skbkontur.ru/react-ui/next',
-});
-
-stableVersions.forEach(version => {
-  versionSection.sections.push({
-    name: version,
-    content: '../README.md',
-    href: `http://tech.skbkontur.ru/react-ui/${version}`,
-  });
-});
-
 config.sections = [
   { name: 'Readme', content: '../README.md', exampleMode: 'expand' },
   { name: 'Changelog', content: '../CHANGELOG.md' },
@@ -56,9 +47,26 @@ config.sections = [
   { name: 'Icons', content: '../components/Icon/README.md' },
   { name: 'LocaleProvider', content: '../LOCALEPROVIDER.md' },
   { name: 'Components', components: config.components, sectionDepth: 1 },
+  {
+    name: 'Versions',
+    sections: [
+      {
+        name: 'lts',
+        content: '../README.md',
+        href: 'http://tech.skbkontur.ru/react-ui/lts',
+      },
+      ...stableVersions.map(version => {
+        return {
+          name: version,
+          content: '../README.md',
+          href: `http://tech.skbkontur.ru/react-ui/${version}`,
+        };
+      }),
+    ],
+  },
 ];
-config.sections.push(versionSection);
-config.styleguideDir = path.join(config.styleguideDir, '..');
+
+config.styleguideDir = DIR.LATEST;
 config.styleguideComponents = {
   PathlineRenderer: require.resolve('./components/Pathline/PathlineRenderer.tsx'),
 };
